@@ -20,7 +20,7 @@ type LocationAreaResponse struct {
 	Results  []LocationArea `json:"results"`
 }
 
-func GetResponseArea(url) (LocationAreaResponse, error) {
+func GetResponseArea(url string) (LocationAreaResponse, error) {
 	res, err := http.Get(url)
 	if err != nil {
 		return LocationAreaResponse{}, err

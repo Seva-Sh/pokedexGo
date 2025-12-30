@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Seva-Sh/pokedexGo/internal/pokeapi/pokeapi"
+	"github.com/Seva-Sh/pokedexgo/internal/pokeapi"
 )
 
 type config struct {
@@ -43,7 +43,7 @@ func getCommands() map[string]cliCommand {
 	}
 }
 
-func commandExit(cfcg *config) error {
+func commandExit(cfg *config) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
