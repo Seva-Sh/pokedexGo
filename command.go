@@ -5,11 +5,13 @@ import (
 	"os"
 
 	"github.com/Seva-Sh/pokedexgo/internal/pokeapi"
+	"github.com/Seva-Sh/pokedexgo/internal/pokecache"
 )
 
 type config struct {
 	Next     *string
 	Previous *string
+	Cache    *pokecache.Cache
 }
 
 type cliCommand struct {
@@ -60,13 +62,27 @@ func commandHelp(cfg *config) error {
 
 func commandMap(cfg *config) error {
 	var url string
+	var locationAreaResponse pokeapi.LocationAreaResponse
+	var err error
+	var data []byte
+	// determine the url we are working with
 	if cfg.Next != nil {
 		url = *cfg.Next
 	} else {
 		url = pokeapi.LocationAreaURL
 	}
 
-	locationAreaResponse, err := pokeapi.GetResponseArea(url)
+	// check if the current url is in the cache
+	value, ok := cfg.Cache.Get(url)
+	if ok {
+		locationAreaResponse, err = pokeapi.UnmarshalLocationAreaResponse(value, nil)
+	} else {
+		locationAreaResponse, err, data = pokeapi.GetLocationAreaResponse(url)
+		if err != nil {
+			return err
+		}
+		cfg.Cache.Add(url, data)
+	}
 
 	if err != nil {
 		return err
@@ -84,6 +100,10 @@ func commandMap(cfg *config) error {
 
 func commandMapb(cfg *config) error {
 	var url string
+	var locationAreaResponse pokeapi.LocationAreaResponse
+	var err error
+	var data []byte
+	// determine the url we are working with
 	if cfg.Previous == nil {
 		fmt.Print("you're on the first page\n")
 		return nil
@@ -91,7 +111,17 @@ func commandMapb(cfg *config) error {
 		url = *cfg.Previous
 	}
 
-	locationAreaResponse, err := pokeapi.GetResponseArea(url)
+	// check if the current url is in the cache
+	value, ok := cfg.Cache.Get(url)
+	if ok {
+		locationAreaResponse, err = pokeapi.UnmarshalLocationAreaResponse(value, nil)
+	} else {
+		locationAreaResponse, err, data = pokeapi.GetLocationAreaResponse(url)
+		if err != nil {
+			return err
+		}
+		cfg.Cache.Add(url, data)
+	}
 
 	if err != nil {
 		return err
