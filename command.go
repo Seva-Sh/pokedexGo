@@ -53,7 +53,7 @@ func commandExit(cfg *config) error {
 
 func commandHelp(cfg *config) error {
 	fmt.Println("Welcome to the Pokedex!")
-	fmt.Println("Usage:\n")
+	fmt.Println("Usage:")
 	for _, val := range getCommands() {
 		fmt.Printf("%v: %v\n", val.name, val.description)
 	}
