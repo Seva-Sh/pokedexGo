@@ -17,7 +17,7 @@ type config struct {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*config) error
+	callback    func(*config, *string) error
 }
 
 func getCommands() map[string]cliCommand {
@@ -42,16 +42,21 @@ func getCommands() map[string]cliCommand {
 			description: "Display the previous 20 location names",
 			callback:    commandMapb,
 		},
+		"explore": {
+			name:        "explore",
+			description: "Display a list of Pokemon in a given location",
+			callback:    commandExplore,
+		},
 	}
 }
 
-func commandExit(cfg *config) error {
+func commandExit(cfg *config, location *string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(cfg *config) error {
+func commandHelp(cfg *config, location *string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	for _, val := range getCommands() {
@@ -60,7 +65,7 @@ func commandHelp(cfg *config) error {
 	return nil
 }
 
-func commandMap(cfg *config) error {
+func commandMap(cfg *config, location *string) error {
 	var url string
 	var locationAreaResponse pokeapi.LocationAreaResponse
 	var err error
@@ -75,7 +80,7 @@ func commandMap(cfg *config) error {
 	// check if the current url is in the cache
 	value, ok := cfg.Cache.Get(url)
 	if ok {
-		locationAreaResponse, err = pokeapi.UnmarshalLocationAreaResponse(value, nil)
+		locationAreaResponse, err = pokeapi.UnmarshalLocationAreaResponse(value)
 	} else {
 		locationAreaResponse, err, data = pokeapi.GetLocationAreaResponse(url)
 		if err != nil {
@@ -98,7 +103,7 @@ func commandMap(cfg *config) error {
 	return nil
 }
 
-func commandMapb(cfg *config) error {
+func commandMapb(cfg *config, location *string) error {
 	var url string
 	var locationAreaResponse pokeapi.LocationAreaResponse
 	var err error
@@ -107,14 +112,13 @@ func commandMapb(cfg *config) error {
 	if cfg.Previous == nil {
 		fmt.Print("you're on the first page\n")
 		return nil
-	} else {
-		url = *cfg.Previous
 	}
+	url = *cfg.Previous
 
 	// check if the current url is in the cache
 	value, ok := cfg.Cache.Get(url)
 	if ok {
-		locationAreaResponse, err = pokeapi.UnmarshalLocationAreaResponse(value, nil)
+		locationAreaResponse, err = pokeapi.UnmarshalLocationAreaResponse(value)
 	} else {
 		locationAreaResponse, err, data = pokeapi.GetLocationAreaResponse(url)
 		if err != nil {
@@ -132,6 +136,40 @@ func commandMapb(cfg *config) error {
 
 	for _, area := range locationAreaResponse.Results {
 		fmt.Println(area.Name)
+	}
+
+	return nil
+}
+
+func commandExplore(cfg *config, location *string) error {
+	if location == nil {
+		fmt.Println("You must provide a location name. Example: explore pastoria-city-area")
+		return nil
+	}
+	var locationAreaNamedResponse pokeapi.LocationAreaNamedResponse
+	var err error
+	var data []byte
+	url := pokeapi.LocationAreaURL + "/" + *location
+
+	value, ok := cfg.Cache.Get(url)
+	if ok {
+		locationAreaNamedResponse, err = pokeapi.UnmarshalLocationAreaNamedResponse(value)
+	} else {
+		locationAreaNamedResponse, err, data = pokeapi.GetLocationAreaNamedResponse(url)
+		if err != nil {
+			return err
+		}
+		cfg.Cache.Add(url, data)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Exploring " + *location + "...")
+	fmt.Println("Found Pokemon:")
+	for _, pokemon := range locationAreaNamedResponse.PokemonEncounters {
+		fmt.Println(" - " + pokemon.Pokemon.Name)
 	}
 
 	return nil
