@@ -10,10 +10,10 @@ import (
 )
 
 type config struct {
-	Next     *string
-	Previous *string
-	Cache    *pokecache.Cache
-	Pokedex  *map[string]Pokemon
+	Next          *string
+	Previous      *string
+	Cache         *pokecache.Cache
+	CaughtPokemon map[string]pokeapi.Pokemon
 }
 
 type cliCommand struct {
@@ -158,6 +158,7 @@ func commandExplore(cfg *config, location *string) error {
 	var data []byte
 	url := pokeapi.LocationAreaURL + "/" + *location
 
+	// check if the current url is already in the cache
 	value, ok := cfg.Cache.Get(url)
 	if ok {
 		locationAreaNamedResponse, err = pokeapi.UnmarshalLocationAreaNamedResponse(value)
@@ -183,7 +184,27 @@ func commandExplore(cfg *config, location *string) error {
 }
 
 func commandCatch(cfg *config, name *string) error {
-	pokemon, err := pokeapi.GetPokemon(*name)
+	if name == nil {
+		fmt.Println("You must provide a Pokemon name. Example: catch pikachu")
+		return nil
+	}
+	var pokemon pokeapi.Pokemon
+	var err error
+	var data []byte
+	url := pokeapi.PokemonURL + "/" + *name
+
+	// check if the current url is already in the cache
+	value, ok := cfg.Cache.Get(url)
+	if ok {
+		pokemon, err = pokeapi.UnmarshalPokemonResponse(value)
+	} else {
+		pokemon, err, data = pokeapi.GetPokemon(url)
+		if err != nil {
+			return err
+		}
+		cfg.Cache.Add(url, data)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -193,9 +214,10 @@ func commandCatch(cfg *config, name *string) error {
 	res := rand.Intn(pokemon.BaseExperience)
 
 	if res < 35 {
-
+		cfg.CaughtPokemon[*name] = pokemon
+		fmt.Println(*name + " was caught!")
 	} else {
-		fmt.Println("Oh no!")
+		fmt.Println(*name + " escaped!")
 	}
 
 	return nil

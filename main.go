@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Seva-Sh/pokedexgo/internal/pokeapi"
 	"github.com/Seva-Sh/pokedexgo/internal/pokecache"
 )
 
@@ -13,8 +14,11 @@ func main() {
 	var err error
 	scanner := bufio.NewScanner(os.Stdin)
 	interval := 5 * time.Second
-	cfg := &config{}
-	cfg.Cache = pokecache.NewCache(interval)
+	cfg := &config{
+		Cache:         pokecache.NewCache(interval),
+		CaughtPokemon: make(map[string]pokeapi.Pokemon),
+	}
+
 	commands := getCommands()
 
 	for {

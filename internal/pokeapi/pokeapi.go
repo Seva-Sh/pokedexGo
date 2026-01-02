@@ -80,13 +80,12 @@ func UnmarshalPokemonResponse(data []byte) (Pokemon, error) {
 	return pokemonResponse, nil
 }
 
-func GetPokemon(name string) (Pokemon, error) {
-	url := PokemonURL + "/" + name
+func GetPokemon(url string) (Pokemon, error, []byte) {
 	data, err := ExtractURL(url)
 	if err != nil {
-		return Pokemon{}, err
+		return Pokemon{}, err, []byte{}
 	}
 
 	pokemon, err := UnmarshalPokemonResponse(data)
-	return pokemon, err
+	return pokemon, err, data
 }
